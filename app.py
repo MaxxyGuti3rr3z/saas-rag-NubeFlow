@@ -5,19 +5,10 @@ import subprocess
 
 import streamlit as st
 
-@st.cache_resource(show_spinner=False)
-def verificar_o_crear_db():
-   
-    if not os.path.exists("chroma_db"):
-        with st.spinner("🚀 Preparando base de conocimiento por primera vez... por favor espera unos segundos."):
-            try:
-                subprocess.run(["python", "src/ingest.py"], check=True)
-            except Exception as e:
-                st.error(f"Error al inicializar la base de datos: {e}")
-    return True
 
 
-verificar_o_crear_db()
+
+
 
 sys.path.append(
     os.path.join(
@@ -114,3 +105,14 @@ if pregunta:
             "content": respuesta
         }
     )
+    
+
+sys.path.append(os.path.join(os.path.dirname(__file__), "src"))
+from agent import preguntar
+if not os.path.exists("chroma_db"):
+    with st.spinner("🚀 Procesando tus documentos PDF por primera vez en la nube..."):
+        try:
+            subprocess.run(["python", "src/ingest.py"], check=True)
+        except Exception as e:
+            st.error(f"❌ Error al inicializar la base de datos: {e}")
+            st.stop()
