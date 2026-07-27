@@ -1,6 +1,7 @@
 import os
 import glob
 import shutil
+import tempfile
  
 from dotenv import load_dotenv
 from datetime import datetime
@@ -14,7 +15,12 @@ load_dotenv()
  
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 DATA_DIR = os.path.join(BASE_DIR, "data")
-CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
+ 
+# IMPORTANTE: Chroma usa SQLite por debajo, que necesita locks de archivo reales.
+# El directorio del repo en Streamlit Cloud corre sobre un filesystem que NO
+# soporta bien esos locks (da "attempt to write a readonly database").
+# /tmp sí es un disco local real y escribible, así que guardamos ahí la base.
+CHROMA_DIR = os.path.join(tempfile.gettempdir(), "nubeflow_chroma_db")
  
 EMBEDDING_MODEL = "models/gemini-embedding-001"
  
@@ -107,7 +113,11 @@ def crear_vectorstore(chunks):
  
  
 def base_de_datos_valida() -> bool:
-   
+    """
+    Verifica que chroma_db exista Y tenga documentos realmente indexados.
+    Reemplaza el chequeo ingenuo de 'la carpeta existe' que dejaba la app
+    atascada con una base vacía si una ingesta anterior falló a la mitad.
+    """
     if not os.path.exists(CHROMA_DIR):
         return False
     try:

@@ -1,4 +1,5 @@
 import os
+import tempfile
  
 from dotenv import load_dotenv
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
@@ -9,7 +10,8 @@ from langchain_core.prompts import ChatPromptTemplate
 load_dotenv()
  
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
+# Debe apuntar exactamente al mismo directorio que ingest.py (ver comentario ahí)
+CHROMA_DIR = os.path.join(tempfile.gettempdir(), "nubeflow_chroma_db")
  
 EMBEDDING_MODEL = "models/gemini-embedding-001"
 GROQ_MODEL = "llama-3.3-70b-versatile"
@@ -39,7 +41,8 @@ def preguntar(pregunta):
     resultados = vectorstore.similarity_search(pregunta, k=TOP_K)
  
     if not resultados:
-
+        # Devolvemos siempre un dict (misma forma que la respuesta normal)
+        # para que app.py no tenga que distinguir entre str y dict.
         return {
             "respuesta": "No encontré esta información en los documentos disponibles.",
             "fuentes": [],
@@ -84,3 +87,4 @@ Respuesta:
         "respuesta": respuesta.content,
         "fuentes": list(fuentes_usadas),
     }
+ 
