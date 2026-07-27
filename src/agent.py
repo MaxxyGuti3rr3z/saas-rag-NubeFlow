@@ -94,7 +94,7 @@ def preguntar(pregunta):
     llm = crear_llm()
 
 
-    # Buscar documentos relacionados
+   
 
     resultados = vectorstore.similarity_search(
 
@@ -110,7 +110,7 @@ def preguntar(pregunta):
         return "No encontré información relacionada."
 
 
-    # Construir contexto
+    
 
     contexto = ""
 
@@ -134,7 +134,7 @@ Contenido:
 """
 
 
-    # Prompt del agente
+
 
     prompt = ChatPromptTemplate.from_template(
         """

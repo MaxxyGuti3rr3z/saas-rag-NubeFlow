@@ -1,20 +1,4 @@
-# -*- coding: utf-8 -*-
 
-"""
-ingest.py
-
-Módulo encargado de crear la base vectorial del agente.
-
-Flujo:
-
-PDF
- ↓
-División en chunks
- ↓
-Embeddings Gemini
- ↓
-ChromaDB
-"""
 
 import os
 import glob
@@ -31,11 +15,10 @@ from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
 
 
-# Cargar variables del .env
 load_dotenv()
 
 
-# Configuración
+
 
 DATA_DIR = "data"
 CHROMA_DIR = "chroma_db"
@@ -75,7 +58,7 @@ def cargar_pdfs():
         )
 
 
-        # Detectar categoría según carpeta
+      
         categoria = "General"
 
         if "recursos_humanos" in archivo.lower():
@@ -177,7 +160,6 @@ def crear_vectorstore(chunks):
     )
 
 
-    # Limpiar base anterior
 
     if os.path.exists(CHROMA_DIR):
 

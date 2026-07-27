@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-
-"""
-app.py
-
-Interfaz web del agente NubeFlow usando Streamlit.
-"""
 
 import os
 import sys
@@ -12,7 +5,6 @@ import sys
 import streamlit as st
 
 
-# Importar archivos de src
 sys.path.append(
     os.path.join(
         os.path.dirname(__file__),
@@ -25,7 +17,6 @@ from src.agent import preguntar
 
 
 
-# Configuración
 
 st.set_page_config(
     page_title="NubeFlow AI",
@@ -41,15 +32,11 @@ st.caption(
 )
 
 
-# Historial
-
 if "messages" not in st.session_state:
 
     st.session_state.messages = []
 
 
-
-# Mostrar historial
 
 for message in st.session_state.messages:
 
@@ -59,9 +46,6 @@ for message in st.session_state.messages:
             message["content"]
         )
 
-
-
-# Entrada usuario
 
 pregunta = st.chat_input(
     "Pregunta sobre tus documentos..."
@@ -101,12 +85,13 @@ if pregunta:
 
 
             with st.expander("📚 Ver fuentes utilizadas"):
-
-                for fuente in respuesta["fuentes"]:
-                    st.write(
-                            "📄",
-                            fuente
-                )
+                
+                if isinstance(respuesta, dict) and "fuentes" in respuesta and respuesta["fuentes"]:
+                    with st.expander("Ver fuentes utilizadas"):
+                        for fuente in respuesta["fuentes"]:
+                            st.markdown(f"📄 `{fuente}`")
+                else:
+                    st.caption("ℹ️ No se requirieron documentos internos para esta respuesta.")
 
 
     st.session_state.messages.append(
