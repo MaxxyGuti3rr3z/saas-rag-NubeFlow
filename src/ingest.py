@@ -18,10 +18,11 @@ from langchain_chroma import Chroma
 load_dotenv()
 
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 
+DATA_DIR = os.path.join(BASE_DIR, "data")
+CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
 
-DATA_DIR = "data"
-CHROMA_DIR = "chroma_db"
 
 EMBEDDING_MODEL = "models/gemini-embedding-001"
 
@@ -61,13 +62,11 @@ def cargar_pdfs():
       
         categoria = "General"
 
-        if "recursos_humanos" in archivo.lower():
+        if "recurso" in archivo.lower() or "rh" in archivo.lower():
             categoria = "Recursos Humanos"
-
-        elif "financiero" in archivo.lower():
+        elif "finanz" in archivo.lower() or "financ" in archivo.lower():
             categoria = "Financiero"
-
-        elif "operaciones" in archivo.lower():
+        elif "operaci" in archivo.lower():
             categoria = "Operaciones"
 
 
