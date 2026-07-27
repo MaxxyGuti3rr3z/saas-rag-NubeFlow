@@ -12,7 +12,8 @@ from langchain_core.prompts import ChatPromptTemplate
 
 load_dotenv()
 
-CHROMA_DIR = "chroma_db"
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
 
 EMBEDDING_MODEL = "models/gemini-embedding-001"
 
