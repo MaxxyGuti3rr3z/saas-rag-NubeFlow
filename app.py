@@ -97,9 +97,7 @@ if pregunta:
             )
 
 
-            st.markdown(
-                respuesta["respuesta"]
-            )
+            st.markdown(respuesta)
 
 
             with st.expander("📚 Ver fuentes utilizadas"):
