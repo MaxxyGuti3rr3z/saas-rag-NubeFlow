@@ -10,7 +10,7 @@ for key in ("GOOGLE_API_KEY", "GROQ_API_KEY"):
         os.environ[key] = st.secrets[key]
  
 from agent import preguntar
-import ingest  
+import ingest
  
 st.set_page_config(page_title="NubeFlow AI", page_icon="🤖")
 st.title("🤖 NubeFlow AI Agent")
@@ -25,11 +25,8 @@ def construir_base_de_datos():
             st.error(f"❌ Error al construir la base de datos: {e}")
             st.stop()
  
- 
-
 if not ingest.base_de_datos_valida():
     construir_base_de_datos()
- 
 
 with st.sidebar:
     st.subheader("⚙️ Estado de la base de conocimiento")
@@ -48,6 +45,22 @@ with st.sidebar:
     if st.button("🔄 Reconstruir base de conocimiento"):
         construir_base_de_datos()
         st.rerun()
+
+    st.subheader("🧾 Registro de ejecución")
+    import agent as _agent_mod 
+    if os.path.exists(_agent_mod.LOG_FILE):
+        with open(_agent_mod.LOG_FILE, "r", encoding="utf-8") as f:
+            contenido_log = f.read()
+        total_lineas = contenido_log.count("\n")
+        st.caption(f"{total_lineas} interacción(es) registrada(s) en esta sesión.")
+        st.download_button(
+            "📥 Descargar log (JSON Lines)",
+            data=contenido_log,
+            file_name="nubeflow_agent_log.jsonl",
+            mime="application/jsonl",
+        )
+    else:
+        st.caption("Todavía no hay interacciones registradas.")
  
  
 if "messages" not in st.session_state:
@@ -89,3 +102,4 @@ if pregunta:
         "content": texto_respuesta,
         "fuentes": fuentes,
     })
+ 
