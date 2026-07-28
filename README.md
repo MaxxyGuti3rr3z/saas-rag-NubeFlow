@@ -208,31 +208,15 @@ podemos usarla").
 
 ## 📸 Capturas y evidencia
 
-El desafío pide al menos una imagen o video del agente corriendo en la nube. Te recomiendo
-incluir estas capturas (guardalas en una carpeta `screenshots/` en la raíz del repo y
-enlazalas desde acá):
+Chat funcionando en producción
 
-1. **Chat funcionando en producción** — una pregunta real (ej. "¿Qué es NubeFlow?") con la
-   respuesta y el expander "Ver fuentes utilizadas" abierto. Es la evidencia principal de
-   que el deploy funciona de punta a punta.
-2. **Fallback ante una pregunta fuera de alcance** — algo como "¿Dónde falleció San Martín?"
-   respondiendo "No encontré esta información...". Demuestra el control de alucinaciones.
-3. **Barra lateral completa** — mostrando "Fragmentos indexados", el selector de categoría
-   y el panel de "Registro de ejecución". Resume varias features en una sola imagen.
-4. **El archivo `.jsonl` descargado**, abierto en un editor de texto — evidencia concreta
-   del registro de ejecución (timestamp, scores, fuentes).
-5. **Feedback en acción** — una respuesta con el 👍 o 👎 ya marcado ("Feedback registrado").
-6. *(Opcional)* Un GIF o video corto de 20-30 segundos recorriendo el flujo completo:
-   pregunta → respuesta con fuentes → feedback → descarga del log. Vale más que varias
-   capturas sueltas si tenés tiempo de grabarlo.
+<img width="1917" height="912" alt="Captura de pantalla 2026-07-27 222219" src="https://github.com/user-attachments/assets/f59ede7e-743f-4b86-b859-d0db267e5dbc" />
 
-Ejemplo de cómo insertarlas en el README una vez que las tengas en `screenshots/`:
-```markdown
-![Chat funcionando en producción](screenshots/chat-produccion.png)
-![Fallback ante pregunta sin respuesta](screenshots/fallback.png)
-![Barra lateral con estado y filtros](screenshots/sidebar.png)
-![Registro de ejecución descargado](screenshots/log-jsonl.png)
-```
+ Ante pregunta sin respuesta
+
+<img width="1917" height="912" alt="Captura de pantalla 2026-07-27 222419" src="https://github.com/user-attachments/assets/7ef7dabc-c145-4b44-ad70-859286e368be" />
+
+
 
 ---
 
