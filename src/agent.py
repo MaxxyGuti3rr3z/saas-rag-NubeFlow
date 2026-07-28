@@ -1,4 +1,5 @@
 import os
+import re
 import json
 import tempfile
 from datetime import datetime, timezone
@@ -12,19 +13,34 @@ from langchain_core.prompts import ChatPromptTemplate
 load_dotenv()
  
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-
+# Debe apuntar exactamente al mismo directorio que ingest.py (ver comentario ahí)
 CHROMA_DIR = os.path.join(tempfile.gettempdir(), "nubeflow_chroma_db")
  
-
+# --- Etapa 8: Registro de ejecución ---
+# Se guarda en /tmp por el mismo motivo que chroma_db (ver ingest.py): el
+# filesystem del propio repositorio en Streamlit Cloud no soporta bien las
+# escrituras/locks, mientras que /tmp sí es un disco local real y escribible.
 LOG_DIR = os.path.join(tempfile.gettempdir(), "nubeflow_logs")
 LOG_FILE = os.path.join(LOG_DIR, "agent_log.jsonl")
  
 EMBEDDING_MODEL = "models/gemini-embedding-001"
 GROQ_MODEL = "llama-3.3-70b-versatile"
  
-TOP_K = 8                 
-TOP_N = 4                  
-UMBRAL_RELEVANCIA = 0.5    
+TOP_K = 8                  # candidatos iniciales de la búsqueda vectorial (antes: 4)
+TOP_N = 4                  # fragmentos finales que se envían al LLM tras filtrar
+UMBRAL_RELEVANCIA = 0.5    # score mínimo (0-1) para considerar un fragmento relevante
+ 
+CATEGORIA_TODAS = "Todas las categorías"
+ 
+# Palabras muy comunes en español que no aportan al reranking por palabras clave
+PALABRAS_VACIAS = {
+    "el", "la", "los", "las", "un", "una", "unos", "unas", "de", "del", "al",
+    "y", "o", "que", "en", "es", "son", "por", "para", "con", "sin", "sobre",
+    "cual", "cuales", "cuanto", "cuanta", "cuantos", "cuantas", "como", "donde",
+    "quien", "quienes", "mi", "tu", "su", "sus", "se", "lo", "le", "les",
+    "a", "e", "u", "pero", "si", "no", "que", "cual", "qué", "cuál", "cómo",
+    "dónde", "quién",
+}
  
  
 def cargar_vectorstore():
@@ -69,10 +85,76 @@ def _registrar_log(pregunta: str, respuesta: str, fuentes: list, encontro_contex
         print(f"No se pudo escribir el log de ejecución: {e}")
  
  
-def preguntar(pregunta):
+def obtener_categorias_disponibles() -> list:
+    """
+    Devuelve las categorías de documentos realmente indexadas (leídas de los
+    metadatos en Chroma), para poder ofrecer el filtro en la interfaz sin tener
+    que hardcodear la lista.
+    """
+    try:
+        vectorstore = cargar_vectorstore()
+        data = vectorstore.get()
+        categorias = {m.get("categoria", "General") for m in data.get("metadatas", []) if m}
+        return sorted(categorias)
+    except Exception as e:
+        print(f"No se pudieron leer las categorías disponibles: {e}")
+        return []
+ 
+ 
+def _rerank_por_palabras_clave(pregunta: str, candidatos: list) -> list:
+    """
+    Reranking simple y liviano (sin modelos adicionales): además del score
+    semántico de embeddings, le da un pequeño impulso a los fragmentos que
+    comparten más palabras clave literales con la pregunta. Esto ayuda a
+    desempatar casos donde la similitud semántica es pareja, pero un
+    fragmento en particular menciona los términos exactos de la pregunta.
+ 
+    No reemplaza un cross-encoder "de verdad", pero mejora el orden sin
+    agregar dependencias ni latencia significativa.
+    """
+    palabras_pregunta = set(re.findall(r"\w+", pregunta.lower())) - PALABRAS_VACIAS
+ 
+    con_boost = []
+    for doc, score in candidatos:
+        palabras_doc = set(re.findall(r"\w+", doc.page_content.lower()))
+        coincidencias = len(palabras_pregunta & palabras_doc)
+        boost = min(coincidencias * 0.02, 0.1)
+        con_boost.append((doc, score, score + boost))
+ 
+    con_boost.sort(key=lambda x: x[2], reverse=True)
+    return [(doc, score_original) for doc, score_original, _ in con_boost]
+ 
+ 
+def registrar_feedback(pregunta: str, respuesta: str, feedback: str):
+    """
+    Guarda un feedback (positivo/negativo) del usuario sobre una respuesta ya
+    dada, como una entrada adicional en el mismo archivo de log.
+    """
+    try:
+        os.makedirs(LOG_DIR, exist_ok=True)
+        entrada = {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "tipo": "feedback",
+            "pregunta": pregunta,
+            "respuesta": respuesta,
+            "feedback": feedback,  
+        }
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entrada, ensure_ascii=False) + "\n")
+    except Exception as e:
+        print(f"No se pudo registrar el feedback: {e}")
+ 
+ 
+def preguntar(pregunta, categoria=None):
     vectorstore = cargar_vectorstore()
-
-    resultados_con_score = vectorstore.similarity_search_with_relevance_scores(pregunta, k=TOP_K)
+    filtro = None
+    if categoria and categoria != CATEGORIA_TODAS:
+        filtro = {"categoria": {"$eq": categoria}}
+    resultados_con_score = vectorstore.similarity_search_with_relevance_scores(
+        pregunta, k=TOP_K, filter=filtro
+    )
+    resultados_con_score = _rerank_por_palabras_clave(pregunta, resultados_con_score)
+ 
     relevantes = [(doc, score) for doc, score in resultados_con_score if score >= UMBRAL_RELEVANCIA]
     relevantes.sort(key=lambda x: x[1], reverse=True)
     relevantes = relevantes[:TOP_N]
@@ -80,7 +162,7 @@ def preguntar(pregunta):
     scores_para_log = [round(float(score), 3) for _, score in resultados_con_score]
  
     if not relevantes:
-
+  
         respuesta_fallback = "No encontré esta información en los documentos disponibles."
         _registrar_log(
             pregunta, respuesta_fallback, [],
